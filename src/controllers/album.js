@@ -130,7 +130,6 @@ const remove = async (req, res) => {
       return res.status(404).json({ message: 'Album not found' });
     }
 
-    // Cleanup photo files
     await cleanupPhotos(photos.rows);
 
     res.json({ message: 'Album deleted successfully' });
