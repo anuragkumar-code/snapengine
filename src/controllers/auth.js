@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { findUserByEmail, createUser } = require('../models/user');
+const sessionModel = require('../models/session');
 
 const register = async (req, res) => {
   try {
@@ -68,6 +69,18 @@ const login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); 
+
+    await sessionModel.createSession({
+      user_id: user.id,
+      token,
+      ip_address: ip,
+      user_agent: userAgent,
+      expires_at: expiresAt,
+    });
 
     res.json({
       message: 'Login successful',

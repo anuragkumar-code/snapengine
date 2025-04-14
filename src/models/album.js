@@ -9,19 +9,36 @@ const createAlbum = async (userId, title, description) => {
 };
 
 const getAlbumsByUser = async (userId, limit, offset) => {
-  const [albums] = await db.execute(
-    'SELECT * FROM albums WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
-    [userId, limit, offset]
+  const [rows] = await db.execute(
+    `SELECT * FROM albums WHERE user_id = ? LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`,
+    [userId]
   );
-  
-  const [count] = await db.execute(
+
+  const [countResult] = await db.execute(
     'SELECT COUNT(*) as count FROM albums WHERE user_id = ?',
     [userId]
   );
-  
+
   return {
-    count: count[0].count,
-    rows: albums
+    rows,
+    count: countResult[0].count
+  };
+};
+
+const getPhotosByAlbum = async (albumId, limit, offset) => {
+  const [rows] = await db.execute(
+    'SELECT * FROM photos WHERE album_id = ? LIMIT ? OFFSET ?',
+    [albumId, limit, offset]
+  );
+
+  const [countResult] = await db.execute(
+    'SELECT COUNT(*) as count FROM photos WHERE album_id = ?',
+    [albumId]
+  );
+
+  return {
+    rows,
+    count: countResult[0].count
   };
 };
 
@@ -54,5 +71,6 @@ module.exports = {
   getAlbumsByUser,
   getAlbumById,
   updateAlbum,
-  deleteAlbum
+  deleteAlbum,
+  getPhotosByAlbum
 };

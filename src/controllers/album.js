@@ -70,12 +70,13 @@ const getAlbums = async (req, res) => {
   }
 };
 
+
 const getAlbumDetails = async (req, res) => {
-  try {
+  try { 
     const { albumId } = req.params;
     const { page, limit } = req.query;
     const userId = req.user.userId;
-
+    console.log(req.params);
     const album = await getAlbumById(albumId, userId);
     if (!album) {
       return res.status(404).json({ message: 'Album not found' });
