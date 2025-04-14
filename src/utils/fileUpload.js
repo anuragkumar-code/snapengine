@@ -29,8 +29,8 @@ const upload = multer({
 });
 
 const uploadToStorage = async (file) => {
-  // In production, implement cloud storage (AWS S3, Google Cloud Storage, etc.)
-  // For now, return local path
+  // In production, we need implement cloud storage (AWS S3, Google Cloud Storage something)
+  // For now, we are just using the local path for temporary storage
   return `/uploads/${file.filename}`;
 };
 
