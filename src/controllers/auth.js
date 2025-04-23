@@ -5,25 +5,51 @@ const sessionModel = require('../models/session');
 
 const register = async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { firstName,surname,dobDay,dobMonth,dobYear,gender,mobile,email,password,confirmPassword } = req.body;
 
-    if (!email || !password || !name) {
+    if (
+      !firstName || !surname || !dobDay || !dobMonth || !dobYear || !gender ||
+      !mobile || !email || !password || !confirmPassword
+    ) {
       return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    const mobileRegex = /^\d{10}$/;
+    if (!mobileRegex.test(mobile)) {
+      return res.status(400).json({ message: 'Mobile number must be 10 digits' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email address' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
+    if (!['male', 'female'].includes(gender.toLowerCase())) {
+      return res.status(400).json({ message: 'Invalid gender value' });
+    }
+
+    const dob = new Date(`${dobYear}-${dobMonth}-${dobDay}`);
+    if (isNaN(dob.getTime())) {
+      return res.status(400).json({ message: 'Invalid date of birth' });
     }
 
     const existingUser = await findUserByEmail(email);
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'This email is already registered.' });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = await createUser({
-      name,
-      email,
-      password: hashedPassword
-    });
+    const newUser = await createUser({firstName,surname,dob,gender,mobile,email,password: hashedPassword});
 
     const token = jwt.sign(
       { userId: newUser.id },
@@ -36,7 +62,7 @@ const register = async (req, res) => {
       token,
       user: {
         id: newUser.id,
-        name: newUser.name,
+        name: `${newUser.first_name} ${newUser.surname}`,
         email: newUser.email
       }
     });
