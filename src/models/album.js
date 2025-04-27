@@ -1,9 +1,31 @@
 const db = require('../config/db');
 
-const createAlbum = async (userId, title, description) => {
+// const createAlbum = async (userId, title, description) => {
+//   const [result] = await db.execute(
+//     'INSERT INTO albums (user_id, title, description, created_at) VALUES (?, ?, ?, NOW())',
+//     [userId, title, description]
+//   );
+//   return result.insertId;
+// };
+
+const createAlbum = async (userId, albumData) => {
+  const {
+    title,
+    description,
+    eventDate,
+    coverPhotoUrl,
+    tags,
+    category,
+    privacy,
+    location,
+    commentsEnabled,
+  } = albumData;
+
   const [result] = await db.execute(
-    'INSERT INTO albums (user_id, title, description, created_at) VALUES (?, ?, ?, NOW())',
-    [userId, title, description]
+    `INSERT INTO albums 
+    (user_id, title, description, event_date, cover_photo_url, tags, category, privacy, location, comments_enabled, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [userId, title, description, eventDate, coverPhotoUrl, tags, category, privacy, location, commentsEnabled]
   );
   return result.insertId;
 };
