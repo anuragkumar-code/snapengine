@@ -17,32 +17,92 @@ const {
 } = require('../models/photo');
 const { uploadToStorage } = require('../utils/fileUpload');
 
+// const create = async (req, res) => {
+//   try {
+//     const { title, description } = req.body;
+//     const userId = req.user.userId;
+
+//     const validation = validateAlbum({ title, description });
+//     if (!validation.isValid) {
+//       return res.status(400).json({ errors: validation.errors });
+//     }
+
+//     const albumId = await createAlbum(userId, title, description);
+
+//     if (!req.files || req.files.length === 0) {
+//       return res.status(400).json({ message: 'No photos provided' });
+//     }
+
+//     const photoUrls = await Promise.all(
+//       req.files.map(file => uploadToStorage(file))
+//     );
+
+//     const photos = photoUrls.map(url => ({
+//       albumId,
+//       url
+//     }));
+
+//     await addPhotosToAlbum(photos);
+
+//     res.status(201).json({
+//       message: 'Album created successfully',
+//       albumId
+//     });
+//   } catch (error) {
+//     await logError(error, 'Album creation');
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
 const create = async (req, res) => {
   try {
-    const { title, description } = req.body;
     const userId = req.user.userId;
+
+    const {
+      title,
+      description,
+      eventDate,
+      tags,
+      category,
+      privacy,
+      location,
+      commentsEnabled,
+    } = req.body;
 
     const validation = validateAlbum({ title, description });
     if (!validation.isValid) {
       return res.status(400).json({ errors: validation.errors });
     }
 
-    const albumId = await createAlbum(userId, title, description);
-
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: 'No photos provided' });
+    let coverPhotoUrl = null;
+    if (req.files?.coverPhoto) {
+      coverPhotoUrl = await uploadToStorage(req.files.coverPhoto[0]);
     }
 
-    const photoUrls = await Promise.all(
-      req.files.map(file => uploadToStorage(file))
-    );
+    let photoUrls = [];
+    if (req.files?.photos) {
+      photoUrls = await Promise.all(req.files.photos.map(file => uploadToStorage(file)));
+    }
 
-    const photos = photoUrls.map(url => ({
-      albumId,
-      url
-    }));
+    const albumId = await createAlbum(userId, {
+      title,
+      description,
+      eventDate,
+      coverPhotoUrl,
+      tags,
+      category,
+      privacy,
+      location,
+      commentsEnabled: commentsEnabled === 'true' || commentsEnabled === true
+    });
 
-    await addPhotosToAlbum(photos);
+    if (photoUrls.length > 0) {
+      const photos = photoUrls.map(url => ({
+        albumId,
+        url
+      }));
+      await addPhotosToAlbum(photos);
+    }
 
     res.status(201).json({
       message: 'Album created successfully',
@@ -53,6 +113,7 @@ const create = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 const getAlbums = async (req, res) => {
   try {
