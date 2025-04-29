@@ -16,6 +16,7 @@ const {
   getPhotoById 
 } = require('../models/photo');
 const { uploadToStorage } = require('../utils/fileUpload');
+const ImageService = require('../service/ImageService'); 
 
 // const create = async (req, res) => {
 //   try {
@@ -75,13 +76,22 @@ const create = async (req, res) => {
     }
 
     let coverPhotoUrl = null;
+
     if (req.files?.coverPhoto) {
-      coverPhotoUrl = await uploadToStorage(req.files.coverPhoto[0]);
+      const coverPhoto = req.files.coverPhoto[0];
+      const result = await ImageService.compressAndSaveImage(coverPhoto.buffer, coverPhoto.originalname);
+      coverPhotoUrl = result.filePath; 
     }
 
     let photoUrls = [];
-    if (req.files?.photos) {
-      photoUrls = await Promise.all(req.files.photos.map(file => uploadToStorage(file)));
+
+    if (req.files?.photos && req.files.photos.length > 0) {
+      photoUrls = await Promise.all(
+        req.files.photos.map(async (file) => {
+          const result = await ImageService.compressAndSaveImage(file.buffer, file.originalname);
+          return result.filePath; 
+        })
+      );
     }
 
     const albumId = await createAlbum(userId, {
@@ -93,20 +103,20 @@ const create = async (req, res) => {
       category,
       privacy,
       location,
-      commentsEnabled: commentsEnabled === 'true' || commentsEnabled === true
+      commentsEnabled: commentsEnabled === 'true' || commentsEnabled === true,
     });
 
     if (photoUrls.length > 0) {
-      const photos = photoUrls.map(url => ({
+      const photos = photoUrls.map((url) => ({
         albumId,
-        url
+        url,
       }));
       await addPhotosToAlbum(photos);
     }
 
     res.status(201).json({
       message: 'Album created successfully',
-      albumId
+      albumId,
     });
   } catch (error) {
     await logError(error, 'Album creation');
